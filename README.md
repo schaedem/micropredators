@@ -8,7 +8,7 @@
 - B
 
 ## Methodology
-- Microcosm experiments involved two carbon isotopic labeling treatments, two soil legacies, and two plant species:
+- Greenhouse experiment involved two carbon isotopic labeling treatments, two soil legacies, and two plant species:
   - 12CO2 / 13CO2
   - Conventional (conv) / organic (org)
   - Hairy vetch / winter wheat
