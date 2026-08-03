@@ -1,4 +1,8 @@
-setwd("~/Library/Mobile Documents/com~apple~CloudDocs/Marie/Postdoc_Cornell/SOM_Greenhouse/final_data")
+# Figure 3, Supplemental Table 4, Supplemental Figure 3.
+#
+# Predator:prey ratio = ratio of labeled predator abundance to labeled
+# non-predator abundance in rarefied rhizosphere communities (abundance
+# adjusted for rrn copy number and 16S qPCR).
 
 library(tidyverse)
 library(cowplot)
@@ -8,11 +12,6 @@ library(lme4)
 library(car)
 library(ggtext)   # geom_richtext()/element_markdown()
 
-# Figure 3, Supplemental Table 4, Supplemental Figure 3.
-#
-# Predator:prey ratio = ratio of labeled predator abundance to labeled
-# non-predator abundance in rarefied rhizosphere communities (abundance
-# adjusted for rrn copy number and 16S qPCR, see Supplemental Methods).
 
 # ---- 1. Data preparation ------------------------------------------------
 incorps_soil <- readRDS("incorp_soil_adj_abun.RDS")
@@ -34,8 +33,6 @@ meta_full <- rbind(conv_meta, org_meta) %>%
   filter(sample %in% incorps_soil$sample) %>%
   column_to_rownames("sample")
 
-# NOTE: not explicitly filtered to soil == "rhizo" here; assumes
-# incorps_soil/meta_full are already rhizosphere-only upstream.
 incorp_preds <- incorps_soil %>%
   merge(meta_full) %>%
   filter(ASV %in% tax$ASV) %>%
@@ -57,12 +54,8 @@ incorp_preds <- incorps_soil %>%
   filter(log_adj_abund > 0) %>%
   distinct()
 
-## ---- Canonical, complete rhizosphere sample roster ------------------------
-# incorp_preds only has rows for ASV-sample combos actually detected as
-# labeled, so a sample with zero labeled ASVs in a functional group would
-# otherwise disappear rather than showing a true zero. Roster built from
-# sample metadata directly; labeled abundances are left-joined on and
-# zero-filled below.
+## ---- Rhizosphere sample roster ------------------------
+
 rhizo_sample_roster <- rownames_to_column(meta_full, "sample") %>%
   mutate(plant = ifelse(plant == "wheat", "Wheat", "Vetch")) %>%
   dplyr::select(sample, treatment, plant, timepoint, rep, label) %>%
@@ -71,23 +64,22 @@ rhizo_sample_roster <- rownames_to_column(meta_full, "sample") %>%
   mutate(timepoint = case_when(timepoint_factor == "A" ~ 1, timepoint_factor == "B" ~ 3,
                                timepoint_factor == "C" ~ 7, timepoint_factor == "D" ~ 14))
 
-# --- Helper: outlier-robust "top of the data" for annotation placement --
-# Tukey whisker convention (Q3 + 1.5*IQR, capped at the highest point
-# still within that fence).
+# --- Helper: function for annotation placement --
+
 robust_upper <- function(x) {
   q3 <- quantile(x, 0.75, na.rm = TRUE)
   fence <- q3 + 1.5 * IQR(x, na.rm = TRUE)
   max(x[x <= fence], na.rm = TRUE)
 }
 
-# --- Helper: explicit p-value threshold text (p<0.0001 ... p<0.1, ns)
+# --- Helper: function for p-value threshold text (p<0.0001 ... p<0.1, ns)
 p_label <- function(p) {
   dplyr::case_when(
     p < 0.0001 ~ "p<0.0001", p < 0.001 ~ "p<0.001", p < 0.01 ~ "p<0.01",
     p < 0.05 ~ "p<0.05", p < 0.1 ~ "p<0.1", TRUE ~ "ns"
   )
 }
-# --- Helper: markdown-bold only if p < 0.05 (rendered via geom_richtext)
+# --- Helper: function for bold if p<0.05
 bold_if_sig <- function(label, p) ifelse(!is.na(p) & p < 0.05, paste0("**", label, "**"), label)
 
 # --- Helper: a significance label for a single 2-level factor's marginal
@@ -99,8 +91,8 @@ get_marginal_signif <- function(mod, term) {
   bold_if_sig(p_label(p), p)
 }
 
-# --- Helper: strip any previously-added annotation layer before adding a
-# new one (idempotent re-runs).
+# --- Helper: function to strip any previously-added annotation layer before adding a
+# new one.
 strip_annotations <- function(p) {
   is_annotation_layer <- vapply(p$layers, function(l) {
     inherits(l$geom, "GeomText") || inherits(l$geom, "GeomRichText")
@@ -110,9 +102,8 @@ strip_annotations <- function(p) {
 }
 
 #### Predator:Prey ratio (abundance-based) ###################################
-# Summed per functional group per sample using the untransformed adj_abund
-# (not log_adj_abund -- summing already-logged values isn't a meaningful
-# total), log2 applied once to the final ratio.
+# Summed per functional group per sample using adj_abund
+
 incorp_preds3_abund <- rhizo_sample_roster %>%
   left_join(incorp_preds, by = c("sample", "plant", "treatment", "timepoint", "label", "rep")) %>%
   group_by(sample, plant, treatment, timepoint, label, rep, predator) %>%
@@ -201,11 +192,11 @@ get_sig_trends <- function(mod, group_vars = c("treatment", "plant"), method = "
   trend_df %>% dplyr::filter(p.adj < 0.05)
 }
 
-# --- Helper: significance-bracket coordinates for all significant
+# --- Helper: function for significance bracket coordinates
 # pairwise comparisons within each plant facet -- (a) across timepoints
 # within the same treatment, and (b) across treatments within the same
-# timepoint. Both types are pooled and BH-corrected together per plant
-# facet, since both appear in the same panel.
+# timepoint. Both types are pooled and BH-corrected.
+
 build_sig_brackets <- function(mod, data, value_col, dodge_offset = 0.175) {
   trt_levels <- levels(factor(data$treatment))
   tp_levels  <- sort(unique(data$timepoint))
@@ -214,9 +205,6 @@ build_sig_brackets <- function(mod, data, value_col, dodge_offset = 0.175) {
     group_by(plant) %>%
     summarize(base_y = robust_upper(.data[[value_col]]), .groups = "drop")
 
-  # (a) within-treatment, across timepoints -- explicit, self-named
-  # contrast weight vectors rather than parsing emmeans' auto-generated
-  # contrast label text, which isn't reliable across emmeans versions
   emm_time <- emmeans::emmeans(mod, ~ timepoint | plant * treatment)
   tp_pairs <- utils::combn(tp_levels, 2, simplify = FALSE)
   contrast_list <- lapply(tp_pairs, function(pr) as.numeric(tp_levels == pr[1]) - as.numeric(tp_levels == pr[2]))
@@ -241,8 +229,7 @@ build_sig_brackets <- function(mod, data, value_col, dodge_offset = 0.175) {
     mutate(xpos = match(timepoint, tp_levels), xmin = xpos - dodge_offset, xmax = xpos + dodge_offset, type = "trt") %>%
     dplyr::select(plant, xmin, xmax, p.value, type)
 
-  # pool raw p-values from both comparison types per plant facet, then
-  # FDR-correct once across the combined family
+  # pool raw p-values and apply BH corrections
   sig_brackets <- dplyr::bind_rows(brackets_time, brackets_trt) %>%
     group_by(plant) %>%
     mutate(p.adj = p.adjust(p.value, method = "BH")) %>%
@@ -305,7 +292,7 @@ cor.test(incorp_preds4_abund$perc_C, incorp_preds4_abund$predator_prey_ratio_abu
 cor.test(incorp_preds4_abund$copy_number_16S_g_soil_gwc, incorp_preds4_abund$predator_prey_ratio_abund, method = "spearman")
 
 #### Does each covariate itself differ by treatment/plant? (Supplemental Figure 3) ####
-# Covariate as the OUTCOME: covariate ~ treatment*plant*timepoint + (1|rep)
+
 test_covariate_as_outcome <- function(covariate, data = incorp_preds4_abund) {
   f <- as.formula(paste(covariate, "~ treatment * plant * as.factor(timepoint) + (1 | rep)"))
   mod <- lme4::lmer(f, data = data)
@@ -361,8 +348,6 @@ plot_covariate_boxplot_combined <- function(covariate, ylab, data = incorp_preds
 
   data <- data %>% mutate(treatment = ifelse(treatment == "conv", "Conventional", "Organic"))
 
-  # three separate single-line annotations (not one multi-line block) so
-  # all three share the same x/hjust and left-align consistently
   ggplot(data, aes(x = treatment, y = .data[[covariate]], color = plant, fill = plant)) +
     theme_linedraw() +
     geom_boxplot(position = position_dodge(width = 0.7), width = 0.6, alpha = 0.6, outlier.shape = NA, color = "black") +
@@ -382,7 +367,7 @@ CN_box       <- plot_covariate_boxplot_combined("C_N", "C:N ratio")
 copy16S_box  <- plot_covariate_boxplot_combined("log_16S", expression("log"[10]~"16S copies g"^{-1}*" soil"))
 delta_box    <- plot_covariate_boxplot_combined("delta_13C", expression(delta^13*"C"))
 
-# unified legend, extracted from a throwaway plot with the same plant mapping
+# unified legend
 legend_source_plot <- ggplot(incorp_preds4_abund, aes(x = plant, y = perc_C, color = plant, fill = plant)) +
   geom_boxplot() +
   labs(fill = "Plant", color = "Plant") +
@@ -398,21 +383,3 @@ fig_covariates_combined <- cowplot::plot_grid(
 fig_covariates_combined
 ggsave("SuppFig3_covariates_treatment_by_plant.png", fig_covariates_combined,
        width = 16, height = 9, units = "in", dpi = 600)
-
-#### Does the ratio relate to these covariates, controlling for design? ######
-# ratio ~ covariate*plant*treatment*timepoint + (1|rep); the covariate's
-# own main-effect term tests whether it relates to the ratio after
-# accounting for plant, treatment, and time since labeling.
-test_covariate_interaction <- function(covariate, data = incorp_preds4_abund) {
-  f <- as.formula(paste("predator_prey_ratio_abund ~", covariate, "* plant * treatment * as.factor(timepoint) + (1 | rep)"))
-  mod <- lme4::lmer(f, data = data)
-  cat("\n====", covariate, "====\n")
-  print(car::Anova(mod))
-  invisible(mod)
-}
-
-mod_perc_C_interact <- test_covariate_interaction("perc_C")
-mod_perc_N_interact <- test_covariate_interaction("perc_N")
-mod_CN_interact     <- test_covariate_interaction("C_N")
-mod_16S_interact    <- test_covariate_interaction("log_16S")
-mod_delta_interact  <- test_covariate_interaction("delta_13C")
