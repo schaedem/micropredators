@@ -20,10 +20,10 @@ from typing import Tuple
 import pandas as pd
 
 # ---- Setup -------------------------------------------------------------
-base_dir = Path("/home/marie/predators")
+base_dir = Path("")
 excluded_dirs = {"scripts"}
-ref_seqs = Path("/home/marie/predators/scripts/silva/silva-138-99-seqs.qza")  # full-length SILVA
-ref_tax = Path("/home/marie/predators/scripts/silva/silva-138-99-tax.qza")
+ref_seqs = Path("/silva-138-99-seqs.qza")  # full-length SILVA
+ref_tax = Path("/silva-138-99-tax.qza")
 n_threads = 20
 
 study_dirs = sorted([
