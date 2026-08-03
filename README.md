@@ -24,9 +24,9 @@
 - **IRMS data**: `irms_results_all_final.csv` (percent C, percent N, δ¹³C enrichment per sample).
 - **Phyloseq objects**: `nifa_joint.phyloseq.RDS` (combined ASV table, taxonomy, and sample metadata for this study).
 - **Incorporator ASVs**:
-  - `incorp_soil_adj_abun.RDS`: rhizosphere, sample-by-ASV table of isotopically labeled ASVs with rrn/qPCR-adjusted abundance (`adj_abund`, `log_adj_abund`) and sample metadata (treatment, plant, timepoint, replicate). Used in Figures 1 and 3.
-  - `joint_incorps_all.RDS`: labeled-ASV table across all samples with taxonomy (Phylum/Order/Genus) and results from MW-HR-SIP. Used in Figure 1.
-  - `source_incorp_by_day.RDS`,`conv_source_incorp_by_day.RDS` : per-ASV record of which day(s) each ASV was detected as labeled, split by soil background (organic / conventional); used to build the presence/absence matrix for hierarchical clustering and to restrict the ASV table to labeled ASV-sample combinations. Used in Figure 2.
+  - `incorp_soil_adj_abun.RDS`: rhizosphere, sample-by-ASV table of isotopically labeled ASVs with rrn/qPCR-adjusted abundance (`adj_abund`, `log_adj_abund`) and sample metadata (treatment, plant, timepoint, replicate). 
+  - `joint_incorps_all.RDS`: labeled-ASV table across all samples with taxonomy (Phylum/Order/Genus) and results from MW-HR-SIP. 
+  - `source_incorp_by_day.RDS`,`conv_source_incorp_by_day.RDS` : per-ASV record of which day(s) each ASV was detected as labeled, split by soil background (organic / conventional); used to build the presence/absence matrix for hierarchical clustering and to restrict the ASV table to labeled ASV-sample combinations.
 
 ## Scripts
 - **Figure 1** — `fig1_polr_first_label.R`: Cumulative link (proportional-odds ordinal logistic regression) model of the day of first ¹³C-label detection as a function of treatment, plant host, and predator taxonomic group. Produces Figure 1, Supplemental Figure 1, and Supplemental Tables 2–3.
