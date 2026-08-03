@@ -5,10 +5,8 @@
 # into taxonomic trophic groups via inverse-variance weighting, then fits
 # a hierarchical mixed-effects meta-regression (metafor::rma.mv) to
 # estimate the rhizosphere effect for each trophic group, separately for
-# each plant. "rep" here is this study's block/replicate variable
-# (referred to as "block" in the manuscript text).
+# each plant. 
 
-setwd("~/Library/Mobile Documents/com~apple~CloudDocs/Marie/Postdoc_Cornell/SOM_Greenhouse/final_data")
 library(tidyverse)
 library(metafor)
 library(cowplot)
