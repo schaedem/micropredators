@@ -1,18 +1,15 @@
 """
-16S amplicon sequence processing (this study, NIFA greenhouse experiment).
+16S amplicon sequence processing (this study, isotope pulse-chase greenhouse experiment).
 
 Two sequencing runs were processed separately through DADA2 (organic:
 "nifa"; conventional: "nifa_conv"), then merged and re-classified as one
 combined dataset. Run inside the qiime2-amplicon-2023.9 conda
 environment (see nifa_dada2.sh for environment activation).
 
-ASSUMPTION: `project` is not defined anywhere in the source notebook this
-was built from, but every absolute path in it shares this prefix -- set
-here as the inferred base directory; please confirm.
 """
 import os, re
 
-project = "/home/marie/NIFA"  # ASSUMPTION -- confirm this is correct
+project = "/path"  
 
 processors = 20
 db = "Silva"
