@@ -15,7 +15,7 @@ library(ggtext)
 
 # ---- 1. Compile per-study results --------------------------------------
 
-study_dirs <- list.dirs("meta_analysis/metadata", recursive = FALSE)
+study_dirs <- list.dirs()
 
 combined <- study_dirs %>%
   map_df(~ {
