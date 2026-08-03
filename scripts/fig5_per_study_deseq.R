@@ -14,8 +14,6 @@
 library(tidyverse)
 library(DESeq2)
 
-setwd("meta_analysis/metadata/Ayiti_2022")
-
 # ---- Shared helper functions (identical across all study runs) ------------
 
 # Classify ASVs into an order-level analysis group and predator/non-predator
