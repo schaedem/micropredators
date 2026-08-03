@@ -19,7 +19,7 @@
 16S rRNA sequence data are available in the NCBI Short Read Archives (BioProject PRJNA1496949).
 
 ## Data files
-- **Feature tables & taxonomy** (this study and each of the 31 meta-analysis studies): ASV feature table (`feature-table.tsv`/`.biom`) and cleaned taxonomy (`taxonomy-fixed.tsv` / `taxonomy_clean.tsv`), output of `process_study_sequences.py` / `process_meta_analysis_sequences.py`.
+- **Taxonomy** (this study): Cleaned taxonomy (`taxonomy-fixed.tsv`), output of `process_study_sequences.py`.
 - **Sample metadata**: `conv_sample_metadata.csv`, `org_sample_metadata_new.csv` (treatment, plant, timepoint, replicate, isotope-labeling status), and per-study metadata for the meta-analysis (soil type, primer set, sample counts).
 - **IRMS data**: `irms_results_all_final.csv` (percent C, percent N, δ¹³C enrichment per sample).
 - **Phyloseq objects**: `nifa_joint.phyloseq.RDS` (combined ASV table, taxonomy, and sample metadata for this study).
