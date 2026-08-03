@@ -3,16 +3,7 @@
 # Models the day of first 13C-label detection (an ordinal outcome: 1, 3,
 # 7, or 14) as a function of treatment, plant host, and predator
 # taxonomic group, via a cumulative link (proportional-odds ordinal
-# logistic regression) model. Two versions of the trophic grouping are
-# fit: a 7-level taxonomic grouping (CustomGroup; Supplemental Table 3)
-# and a simpler 3-level Obligate/Facultative/Non-Predator grouping
-# (pred_group; Supplemental Table 2). Predicted probabilities and
-# bootstrapped SEs from the CustomGroup interaction model are plotted
-# two ways: marginalized over treatment x plant (Figure 1) and shown
-# separately for each treatment x plant combination (Supplemental
-# Figure 1).
-
-setwd("~/Library/Mobile Documents/com~apple~CloudDocs/Marie/Postdoc_Cornell/SOM_Greenhouse/final_data")
+# logistic regression) model. 
 
 library(tidyverse)
 library(boot)
