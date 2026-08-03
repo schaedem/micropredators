@@ -6,7 +6,6 @@
 # Output (4 CSVs, one per plant x treatment, each with all 4 timepoints
 # stacked) feeds Step 2 (fig4_rhizosphere_effect.R).
 
-setwd("~/Library/Mobile Documents/com~apple~CloudDocs/Marie/Postdoc_Cornell/SOM_Greenhouse/final_data")
 library(tidyverse)
 library(phyloseq)
 library(DESeq2)
