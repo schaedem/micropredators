@@ -1,15 +1,15 @@
 # micropredators
- Data files and scripts for an experiment involving soils collected from long-term management regimes (72-year corn monoculture or 17-year diverse organic rotation). These soils were collected and used in a greenhouse experiment involving 13CO2 pulse-labeling to track the incorporation of plant carbon within microbial communities in the rhizosphere of two different plant species (hairy vetch or winter wheat). 
+ Data files and scripts for an experiment involving soils collected from long-term management regimes (72-year corn monoculture or 17-year diverse organic rotation). These soils were collected and used in a greenhouse experiment involving ¹³CO₂ pulse-labeling to track the incorporation of plant carbon within microbial communities in the rhizosphere of two different plant species (hairy vetch or winter wheat). 
 
  This repository contains supporting information for Schaedel et al. in prep: *Plant species and land management structure bacterial trophic dynamics in the rhizosphere*. DOI: unassigned
 
 ## Research objectives
-- Determine whether the trophic dynamics of putative bacterial micropredators in the rhizosphere (timing of ¹³C incorporation, predator:prey ratios, and rhizosphere enrichment relative to bulk soil) are structured by plant host identity and soil management legacy..
+- Apply a pulse-chase methodology to determine whether the trophic dynamics of putative bacterial micropredators in the rhizosphere are structured by plant host identity and soil management legacy.
 - Test whether micropredator enrichment in the rhizosphere is a general feature of plant-microbe interactions, by comparing this study's findings against a meta-analysis of 16S rRNA amplicon data from 31 previously published studies.
 
 ## Methodology
 - Greenhouse experiment involved two carbon isotopic labeling treatments, two soil legacies, and two plant species:
-  - 12CO2 / 13CO2
+  - ¹²CO₂ / ¹³CO₂
   - Conventional (conv) / organic (org)
   - Hairy vetch / winter wheat
 - Isopycnic centrifugation and density fractionation was performed on genomic DNA extracted from rhizosphere soil samples collected at 4 timepoints (1/3/7/14 days) after labeling
@@ -24,9 +24,9 @@
 - **IRMS data**: `irms_results_all_final.csv` (percent C, percent N, δ¹³C enrichment per sample).
 - **Phyloseq objects**: `nifa_joint.phyloseq.RDS` (combined ASV table, taxonomy, and sample metadata for this study).
 - **Incorporator ASVs**:
-  - `incorp_soil_adj_abun.RDS`: rhizosphere, sample-by-ASV table of isotopically labeled ASVs with rrn/qPCR-adjusted abundance (`adj_abund`, `log_adj_abund`) and sample metadata (treatment, plant, timepoint, replicate). Used in Figures 1 and 3.
-  - `joint_incorps_all.RDS`: labeled-ASV table across all samples with taxonomy (Phylum/Order/Genus) and results from MW-HR-SIP. Used in Figure 1.
-  - `source_incorp_by_day.RDS`,`conv_source_incorp_by_day.RDS` : per-ASV record of which day(s) each ASV was detected as labeled, split by soil background (organic / conventional); used to build the presence/absence matrix for hierarchical clustering and to restrict the ASV table to labeled ASV-sample combinations. Used in Figure 2.
+  - `incorp_soil_adj_abun.RDS`: rhizosphere, sample-by-ASV table of isotopically labeled ASVs with rrn/qPCR-adjusted abundance (`adj_abund`, `log_adj_abund`) and sample metadata (treatment, plant, timepoint, replicate). 
+  - `joint_incorps_all.RDS`: labeled-ASV table across all samples with taxonomy (Phylum/Order/Genus) and results from MW-HR-SIP. 
+  - `source_incorp_by_day.RDS`,`conv_source_incorp_by_day.RDS` : per-ASV record of which day(s) each ASV was detected as labeled, split by soil background (organic / conventional); used to build the presence/absence matrix for hierarchical clustering and to restrict the ASV table to labeled ASV-sample combinations.
 
 ## Scripts
 - **Figure 1** — `fig1_polr_first_label.R`: Cumulative link (proportional-odds ordinal logistic regression) model of the day of first ¹³C-label detection as a function of treatment, plant host, and predator taxonomic group. Produces Figure 1, Supplemental Figure 1, and Supplemental Tables 2–3.
