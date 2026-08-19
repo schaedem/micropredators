@@ -12,6 +12,33 @@ library(ordinal)
 library(emmeans)
 library(multcomp)
 
+# Summary of overall labeling results by trophic group
+incorps <- readRDS("joint_incorps_all.RDS") %>%
+  mutate(timepoint = ifelse(timepoint == "A", 1,
+                            ifelse(timepoint == "B", 3,
+                                   ifelse(timepoint == "C", 7, 14)))) %>%
+  mutate(timepoint = as.numeric(timepoint)) %>%
+  mutate(predator = ifelse(
+    grepl("Bdello", Phylum) |
+      grepl("Cytophag", Order) |
+      grepl("Lyso", Genus) |
+      grepl("Agromyces", Genus) |
+      grepl("Myxo", Phylum) |
+      grepl("Streptomycetales", Order) |
+      grepl("Vampiro", Order), "Predator", "Non-predator")) %>%
+  mutate(pred_group = ifelse(
+    grepl("Bdello", Phylum) | grepl("Vampiro", Order), "Obligate",
+    ifelse(predator == "Predator" &
+             !grepl("Bdello", Phylum) &
+             !grepl("Vampiro", Order), "Facultative", "Non-Predator"))) %>%
+  group_by(ASV, treatment, plant, pred_group, predator) %>%
+  mutate(first_label = min(timepoint)) %>%
+  ungroup() 
+
+incorps %>%
+  group_by(pred_group) %>%
+  summarize(median = median(first_label))
+
 # ---- 1. Data preparation ------------------------------------------------
 incorps_soil <- readRDS("incorp_soil_adj_abun.RDS")
 
@@ -39,7 +66,7 @@ l2fc <- readRDS("joint_incorps_all.RDS") %>%
   mutate(first_label = min(timepoint)) %>%
   ungroup() %>%
   mutate(timepoint   = as.factor(timepoint),
-         first_label = as.factor(first_label)) %>%
+         first_label = as.numeric(first_label)) %>%
   mutate(pred_group = factor(pred_group,
                              levels = c("Non-Predator", "Facultative", "Obligate"))) %>%
   mutate(CustomGroup = case_when(
@@ -52,8 +79,9 @@ l2fc <- readRDS("joint_incorps_all.RDS") %>%
     Order  == "Vampirovibrionales"~ "*Vampirovibrionales*",
     TRUE                          ~ "Non-predator"
   )) %>%
-  dplyr::select(ASV, CustomGroup, first_label, pred_group, treatment, plant) %>%
+  dplyr::select(ASV, CustomGroup, first_label, pred_group, treatment, plant, predator) %>%
   unique()
+
 
 l2fc$CustomGroup <- as.factor(l2fc$CustomGroup)
 l2fc$treatment   <- as.factor(l2fc$treatment)
@@ -67,7 +95,7 @@ clm_interaction <- clm(first_label ~ treatment * plant * CustomGroup, data = l2f
 clm_final       <- clm(first_label ~ treatment + plant + CustomGroup, data = l2fc)
 anova(clm_final, clm_interaction) # model selection: additive vs. full interaction
 anova(clm_interaction)            # Supplemental Table 3
-
+anova(clm_final)
 # pred_group (3-level Obligate/Facultative/Non-Predator grouping) -- Supplemental Table 2
 clm_interaction2 <- clm(first_label ~ treatment * plant * pred_group, data = l2fc)
 clm_pred_group   <- clm(first_label ~ treatment + plant + pred_group, data = l2fc)

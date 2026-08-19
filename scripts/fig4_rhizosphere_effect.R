@@ -45,9 +45,15 @@ master_weighted <- master_aggregated %>%
          Unit = relevel(factor(Unit), ref = "Non-Predator"))
 
 # ---- 2. Hierarchical meta-regression (metafor::rma.mv) ---------------------
+#Null model
+res_meta_null <- rma.mv(yi = yi, V = V_stable, mods = ~ 1,
+                         random = list(~ 1 | timepoint), data = master_weighted, method = "ML")
+
 # Non-predator as reference level -- for the "relative to non-predators" panels
 res_meta_final <- rma.mv(yi = yi, V = V_stable, mods = ~ Unit,
                          random = list(~ 1 | timepoint), data = master_weighted, method = "ML")
+summary(res_meta_final) #p=0.0001 for Unit term
+anova(res_meta_null, res_meta_final) #0.0001; pred grouping improves model fit
 
 # Does adding plant/soil background improve the model? 
 res_meta_plant <- rma.mv(yi = yi, V = V_stable, mods = ~ Unit + plant,

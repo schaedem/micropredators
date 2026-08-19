@@ -248,6 +248,29 @@ build_sig_brackets <- function(mod, data, value_col, dodge_offset = 0.175) {
 sig_trends_abund <- get_sig_trends(mod_abund_trend)
 sig_brackets_abund <- build_sig_brackets(mod_abund, incorp_preds3_abund, "predator_prey_ratio_abund")
 
+#Rough change between days 1 and 14
+incorp_preds3_abund %>%
+  filter(plant == "Wheat" & treatment == "org") %>%
+  filter(timepoint == 1 | timepoint == 14) %>%
+  group_by(timepoint) %>%
+  summarize(average= mean(predator_prey_ratio_abund))
+#Org wheat fold_change = Day14 / Day1 = 0.0643 / 0.0143 = 4.50
+# percent_change = ((Day14 - Day1) / Day1) × 100
+# = ((0.0643 - 0.0143) / 0.0143) × 100
+# = (0.05 / 0.0143) × 100
+# = 349.7%
+
+incorp_preds3_abund %>%
+  filter(plant == "Vetch" & treatment == "org") %>%
+  filter(timepoint == 1 | timepoint == 14) %>%
+  group_by(timepoint) %>%
+  summarize(average= mean(predator_prey_ratio_abund))
+#Org vetch fold_change Day 14 / Day1 = 0.192
+# percent_change = ((Day14 - Day1) / Day1) × 100
+# = ((0.00968 - 0.0504) / 0.0504) × 100
+# = (-0.04072 / 0.0504) × 100
+# = -80.8%
+
 # only strata with a significant linear trend get a fitted regression line
 trend_data_abund <- incorp_preds3_abund %>%
   inner_join(sig_trends_abund %>% dplyr::select(treatment, plant), by = c("treatment", "plant"))
@@ -387,3 +410,29 @@ fig_covariates_combined <- cowplot::plot_grid(
 fig_covariates_combined
 ggsave("SuppFig3_covariates_treatment_by_plant.png", fig_covariates_combined,
        width = 16, height = 9, units = "in", dpi = 600)
+
+#Does predator-prey ratio vary with measured soil factors? ####
+
+test_covariate_ratio <- function(covariate, outcome = "predator_prey_ratio_abund", data = incorp_preds4_abund) {
+  
+  f <- as.formula(paste0(outcome, " ~ ", covariate, " + treatment * plant * as.factor(timepoint) + (1 | rep)"))
+  
+  mod <- lme4::lmer(f, data = data)
+  
+  aov_tab <- car::Anova(mod)
+  
+  cat("\n====", covariate, "====\n")
+  print(aov_tab)
+  
+  #Extract the covariate's own row from the Anova table
+  covariate_pvalue <- aov_tab[covariate, "Pr(>Chisq)"]
+  covariate_chisq  <- aov_tab[covariate, "Chisq"]
+  
+  return(list(p_value = covariate_pvalue))
+}
+
+mod_perc_C_outcome <- test_covariate_ratio("perc_C") #0.13
+mod_perc_N_outcome <- test_covariate_ratio("perc_N") #0.64
+mod_CN_outcome     <- test_covariate_ratio("C_N") #0.64
+mod_16S_outcome    <- test_covariate_ratio("log_16S") #0.09
+mod_delta_outcome  <- test_covariate_ratio("delta_13C") #0.35
