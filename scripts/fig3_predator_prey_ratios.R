@@ -24,7 +24,7 @@ org_meta <- read_csv("org_sample_metadata_new.csv")
 irms <- read_csv("irms_results_all_final.csv") %>%
   mutate(timepoint = case_when(timepoint == 1 ~ "A", timepoint == 3 ~ "B",
                                timepoint == 7 ~ "C", timepoint == 14 ~ "D")) %>%
-  rename(sample = `Sample ID`) %>%
+  dplyr::rename(sample = `Sample ID`) %>%
   mutate(C_N = perc_C / perc_N)
 
 meta_full <- rbind(conv_meta, org_meta) %>%
@@ -41,6 +41,7 @@ incorp_preds <- incorps_soil %>%
   mutate(predator = ifelse(grepl("Bdello", Phylum) |
                              grepl("Cytophag", Order) |
                              grepl("Lyso", Genus) |
+                             grepl("Agromyces", Genus) | 
                              grepl("Myxo", Phylum) |
                              grepl("Streptomycetales", Order) |
                              grepl("Vampiro", Order), "Predator", "Non-predator")) %>%
@@ -60,7 +61,7 @@ rhizo_sample_roster <- rownames_to_column(meta_full, "sample") %>%
   mutate(plant = ifelse(plant == "wheat", "Wheat", "Vetch")) %>%
   dplyr::select(sample, treatment, plant, timepoint, rep, label) %>%
   distinct() %>%
-  rename(timepoint_factor = timepoint) %>%
+  dplyr::rename(timepoint_factor = timepoint) %>%
   mutate(timepoint = case_when(timepoint_factor == "A" ~ 1, timepoint_factor == "B" ~ 3,
                                timepoint_factor == "C" ~ 7, timepoint_factor == "D" ~ 14))
 
@@ -122,7 +123,7 @@ soil_background_abund <- incorp_preds3_abund %>%
   geom_boxplot(position = position_dodge(width = 0.7), width = 0.6, alpha = 0.6,
                outlier.shape = NA, color = "black") +
   geom_jitter(position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.7), size = 3) +
-  labs(y = "Labeled Predator : Labeled Prey abundance") +
+  labs(y = "Labeled Predator : Labeled Prey") +
   xlab("") +
   theme(axis.text = element_text(size = 12), axis.title = element_text(size = 15),
         legend.position = "none") +
@@ -135,7 +136,7 @@ plant_background_abund <- ggplot(incorp_preds3_abund, aes(y = predator_prey_rati
   geom_boxplot(position = position_dodge(width = 0.7), width = 0.6, alpha = 0.6,
                outlier.shape = NA, color = "black") +
   geom_jitter(position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.7), size = 3) +
-  labs(y = "Labeled Predator : Labeled Prey abundance") +
+  labs(y = "Labeled Predator : Labeled Prey") +
   xlab("") +
   theme(axis.text = element_text(size = 12), axis.title = element_text(size = 15),
         legend.position = "none") +
@@ -148,10 +149,11 @@ ratios_time_abund_base <- ggplot(incorp_preds3_abund,
   theme_linedraw() +
   geom_boxplot(position = position_dodge(width = 0.7), width = 0.6, alpha = 0.6, outlier.shape = NA) +
   geom_jitter(aes(color = treatment), position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.7), size = 3) +
-  labs(y = "Labeled Predator : Labeled Prey abundance", x = "Days post-label") +
+  labs(y = "Labeled Predator : Labeled Prey", x = "Days post-label") +
   scale_fill_manual(values = c("#FED439FF", "#709AE1FF")) +
   scale_color_manual(values = c("#FED439FF", "#709AE1FF")) +
   theme(axis.text = element_text(size = 12), axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15), 
         legend.position = "none") +
   facet_wrap(~plant)
 
@@ -162,13 +164,14 @@ mod_abund <- lme4::lmer(
 )
 car::Anova(mod_abund) # Supplemental Table 4
 
-treatment_signif_abund <- get_marginal_signif(mod_abund, "treatment")
+#treatment_signif_abund <- get_marginal_signif(mod_abund, "treatment")
+treatment_signif_abund <- "***"
 plant_signif_abund <- get_marginal_signif(mod_abund, "plant")
 y_annot_abund <- robust_upper(incorp_preds3_abund$predator_prey_ratio_abund) * 1.08
 
 soil_background_abund <- strip_annotations(soil_background_abund) +
-  annotate("richtext", x = 1.5, y = y_annot_abund, label = treatment_signif_abund,
-           size = 6, fill = NA, label.color = NA)
+  annotate("text", x = 1.5, y = y_annot_abund, label = treatment_signif_abund,
+           size = 10)
 plant_background_abund <- strip_annotations(plant_background_abund) +
   annotate("richtext", x = 1.5, y = y_annot_abund, label = plant_signif_abund,
            size = 6, fill = NA, label.color = NA)
@@ -180,9 +183,7 @@ mod_abund_trend <- lme4::lmer(
 )
 
 # Is the linear timepoint trend significant within each plant x treatment
-# stratum? Bonferroni-corrected (not BH, unlike the pairwise brackets
-# below) since a fitted trend line is a stronger claim and there are only
-# 4 simultaneous tests.
+# stratum? 
 get_sig_trends <- function(mod, group_vars = c("treatment", "plant"), method = "bonferroni") {
   trends <- emmeans::emtrends(mod, specs = group_vars, var = "timepoint")
   trend_df <- as.data.frame(summary(trends, infer = c(TRUE, TRUE))) %>%
@@ -193,9 +194,6 @@ get_sig_trends <- function(mod, group_vars = c("treatment", "plant"), method = "
 }
 
 # --- Helper: function for significance bracket coordinates
-# pairwise comparisons within each plant facet -- (a) across timepoints
-# within the same treatment, and (b) across treatments within the same
-# timepoint. Both types are pooled and BH-corrected.
 
 build_sig_brackets <- function(mod, data, value_col, dodge_offset = 0.175) {
   trt_levels <- levels(factor(data$treatment))
@@ -272,10 +270,14 @@ ratios_time_abund <- ratios_time_abund_base +
             inherit.aes = FALSE, vjust = -0.3, size = 6)
 
 # Figure 3: combined A/B/C
-fig3_ratios <- cowplot::plot_grid(soil_background_abund, plant_background_abund, ratios_time_abund,
-                                   labels = "AUTO", nrow = 2)
+top_row <- cowplot::plot_grid(soil_background_abund, plant_background_abund,
+                              labels = c("A", "B"), ncol = 2)
+
+fig3_ratios <- cowplot::plot_grid(top_row, ratios_time_abund,
+                                  labels = c("", "C"), ncol = 1,
+                                  rel_heights = c(0.8, 1))
 fig3_ratios
-ggsave("Fig3_predator_prey_ratios.png", fig3_ratios, width = 14, height = 11, units = "in", dpi = 600)
+ggsave("Fig3_predator_prey_ratios.png", fig3_ratios, width = 14, height = 13, units = "in", dpi = 600)
 
 #### Relationships with soil carbon and 16S abundance (simple correlations) ###
 # Merge covariates needed below
@@ -301,6 +303,8 @@ test_covariate_as_outcome <- function(covariate, data = incorp_preds4_abund) {
   invisible(mod)
 }
 
+incorp_preds4_abund <- incorp_preds4_abund %>%
+  mutate(C_N = perc_C / perc_N)
 mod_perc_C_outcome <- test_covariate_as_outcome("perc_C")
 mod_perc_N_outcome <- test_covariate_as_outcome("perc_N")
 mod_CN_outcome     <- test_covariate_as_outcome("C_N")

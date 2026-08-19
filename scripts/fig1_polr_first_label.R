@@ -25,6 +25,7 @@ l2fc <- readRDS("joint_incorps_all.RDS") %>%
     grepl("Bdello", Phylum) |
       grepl("Cytophag", Order) |
       grepl("Lyso", Genus) |
+      grepl("Agromyces", Genus) |
       grepl("Myxo", Phylum) |
       grepl("Streptomycetales", Order) |
       grepl("Vampiro", Order), "Predator", "Non-predator")) %>%
@@ -45,6 +46,7 @@ l2fc <- readRDS("joint_incorps_all.RDS") %>%
     Phylum == "Bdellovibrionota"  ~ "*Bdellovibrionota*",
     Phylum == "Myxococcota"       ~ "*Myxococcota*",
     Genus  == "Lysobacter"        ~ "*Lysobacter*",
+    Genus == "Agromyces"          ~ "*Agromyces*",
     Order  == "Streptomycetales"  ~ "*Streptomycetales*",
     Order  == "Cytophagales"      ~ "*Cytophagales*",
     Order  == "Vampirovibrionales"~ "*Vampirovibrionales*",
@@ -86,7 +88,8 @@ cld_labels_int <- c(
   "*Bdellovibrionota*"   = "*Bdellovibrionota* (ab)",
   "*Cytophagales*"       = "*Cytophagales* (b)",
   "*Lysobacter*"         = "*Lysobacter* (ab)",
-  "*Myxococcota*"        = "*Myxococcota* (a)",
+  "*Myxococcota*"        = "*Myxococcota* (ab)",
+  "*Agromyces*"          = "*Agromyces* (ab)", 
   "*Streptomycetales*"   = "*Streptomycetales* (a)",
   "*Vampirovibrionales*" = "*Vampirovibrionales* (ab)",
   "Non-predator"         = "Non-predator (a)"
@@ -102,7 +105,7 @@ contrast_vs_ref <- contrast(emm_facet, method = "trt.vs.ctrl", ref = "Non-predat
 summary(contrast_vs_ref)
 
 # ============================================================
-# SUPPLEMENTAL FIGURE 1: predicted probabilities per treatment x plant
+# SUPPLEMENTAL FIGURE 2: predicted probabilities per treatment x plant
 # ============================================================
 
 # ---- 4. Bootstrap SEs for the per-facet (interaction) predictions -------
@@ -141,7 +144,6 @@ boot_int <- boot(data = l2fc, statistic = boot_int_fn, R = 500)
 cat("Interaction model bootstrap failure rate:",
     round(mean(is.na(boot_int$t[, 1])) * 100, 1), "%\n")
 
-# ---- 5. Predicted probabilities + SEs, long format ----------------------
 pred_probs <- predict(clm_interaction, newdata = newdat, type = "prob")$fit
 colnames(pred_probs) <- levels(l2fc$first_label)
 se_main <- apply(boot_int$t, 2, sd, na.rm = TRUE)
@@ -161,15 +163,14 @@ pred_probs_long <- data.frame(
     pred_group = case_when(
       CustomGroup == "*Bdellovibrionota*"   ~ "Obligate predator",
       CustomGroup == "*Vampirovibrionales*" ~ "Obligate predator",
-      CustomGroup %in% c("*Cytophagales*", "*Lysobacter*", "*Myxococcota*", "*Streptomycetales*") ~ "Facultative predator",
+      CustomGroup %in% c("*Cytophagales*", "*Lysobacter*", "*Myxococcota*", "*Streptomycetales*", "*Agromyces*") ~ "Facultative predator",
       TRUE ~ "Non-predator"
     ),
-    CustomGroup_label = recode(CustomGroup, !!!cld_labels_int),
-    treatment_label = recode(treatment, "conv" = "Conventional", "org" = "Organic"),
-    plant_label = recode(plant, "vetch" = "Vetch", "wheat" = "Wheat")
+    CustomGroup_label = dplyr::recode(CustomGroup, !!!cld_labels_int),
+    treatment_label = dplyr::recode(treatment, "conv" = "Conventional", "org" = "Organic"),
+    plant_label = dplyr::recode(plant, "vetch" = "Vetch", "wheat" = "Wheat")
   )
 
-# ---- 6. Plot -------------------------------------------------------------
 group_colors <- c(
   "Obligate predator"    = "#1F78B4",
   "Facultative predator" = "#E31A1C",
@@ -187,7 +188,7 @@ interaction_plot <-
   scale_x_continuous(breaks = as.numeric(levels(l2fc$first_label))) +
   scale_color_manual(values = group_colors) +
   scale_shape_manual(values = c(
-    "*Bdellovibrionota*"   = 16, "*Cytophagales*" = 17, "*Lysobacter*" = 15,
+    "*Bdellovibrionota*"   = 16, "*Cytophagales*" = 17, "*Lysobacter*" = 15, "*Agromyces*" = 2,
     "*Myxococcota*" = 18, "*Streptomycetales*" = 8, "Non-predator" = 1
   )) +
   scale_alpha_manual(values = c("FALSE" = 1, "TRUE" = 0.6), guide = "none") +
@@ -198,7 +199,7 @@ interaction_plot <-
         axis.text = element_text(size = 12), legend.text = ggtext::element_markdown(size = 12),
         legend.title = element_blank())
 interaction_plot
-ggsave("SuppFig1_label_probability_interaction.png", width = 10, height = 7, units = "in", dpi = 600)
+ggsave("SuppFig2_label_probability_interaction.png", width = 10, height = 7, units = "in", dpi = 600)
 
 # ============================================================
 # FIGURE 1: predicted probabilities marginalized over treatment x plant
@@ -269,10 +270,10 @@ pred_probs_marginal <- data.frame(
     pred_group = case_when(
       CustomGroup == "*Bdellovibrionota*"   ~ "Obligate predator",
       CustomGroup == "*Vampirovibrionales*" ~ "Obligate predator",
-      CustomGroup %in% c("*Cytophagales*", "*Lysobacter*", "*Myxococcota*", "*Streptomycetales*") ~ "Facultative predator",
+      CustomGroup %in% c("*Cytophagales*", "*Lysobacter*", "*Myxococcota*", "*Streptomycetales*", "*Agromyces*") ~ "Facultative predator",
       TRUE ~ "Non-predator"
     ),
-    CustomGroup_label = recode(CustomGroup, !!!cld_labels_int)
+    CustomGroup_label = dplyr::recode(CustomGroup, !!!cld_labels_int)
   )
 
 # ---- 9. Plot --------------------------------------------------------------
@@ -285,7 +286,7 @@ ggplot(pred_probs_marginal,
   scale_x_continuous(breaks = as.numeric(levels(l2fc$first_label))) +
   scale_color_manual(values = group_colors) +
   scale_shape_manual(values = c(
-    "*Bdellovibrionota* (ab)" = 16, "*Cytophagales* (b)" = 17, "*Lysobacter* (ab)" = 15,
+    "*Bdellovibrionota* (ab)" = 16, "*Cytophagales* (b)" = 17, "*Lysobacter* (ab)" = 15, "*Agromyces* (ab)" = 2,
     "*Myxococcota* (a)" = 18, "*Streptomycetales* (a)" = 8, "Non-predator (a)" = 1
   )) +
   labs(x = "Day", y = expression("Probability of first " ^13 * "C label"),
@@ -299,4 +300,4 @@ ggplot(pred_probs_marginal,
         legend.box = "horizontal", legend.box.just = "top",
         legend.box.background = element_rect(color = "black", linewidth = 0.3),
         legend.box.margin = margin(5, 5, 5, 5))
-ggsave("Fig1_label_probability_marginal.png", width = 10, height = 7, units = "in", dpi = 600)
+ggsave("Fig1_label_probability_marginal.png", width = 10.5, height = 7.5, units = "in", dpi = 600)

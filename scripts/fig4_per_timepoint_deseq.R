@@ -27,9 +27,11 @@ tax_df <- as.data.frame(tax_table(physeq)) %>%
     ),
     AnalysisGroup = ifelse(Genus == "Lysobacter", "g__Lysobacter", paste0("o__", CleanOrder)),
     PlotLabel = ifelse(Genus == "Lysobacter", paste0(Phylum, " | Lysobacter"), paste0(Phylum, " | ", CleanOrder)),
+    AnalysisGroup = ifelse(Genus == "Agromyces", "g__Agromyces", paste0("o__", CleanOrder)),
+    PlotLabel = ifelse(Genus == "Agromyces", paste0(Phylum, " | Agromyces"), paste0(Phylum, " | ", CleanOrder)),
     pred_type = case_when(
       Phylum == "Myxococcota" ~ "Facultative",
-      Order %in% c("Streptomycetales", "Cytophagales") | Genus == "Lysobacter" ~ "Facultative",
+      Order %in% c("Streptomycetales", "Cytophagales") | Genus == "Lysobacter" ~ "Facultative" | Genus == "Agromyces" ~ "Facultative",
       Order == "Vampirovibrionales" | Phylum == "Bdellovibrionota" ~ "Obligate",
       TRUE ~ "None"
     )
