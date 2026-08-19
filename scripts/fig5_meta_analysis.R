@@ -50,6 +50,7 @@ master_aggregated <- master_df %>%
     grepl("Streptomycetales", AnalysisGroup) ~ "Streptomycetales",
     grepl("Bdellovibrionota", PlotLabel)   ~ "Bdellovibrionota",
     grepl("Lysobacter", AnalysisGroup)     ~ "Lysobacter",
+    grepl("Agromyces", AnalysisGroup)     ~ "Agromyces",
     grepl("Cytophagales", AnalysisGroup)   ~ "Cytophagales",
     grepl("Vampirovibrionales", AnalysisGroup) ~ "Vampirovibrionales",
     TRUE ~ "Non-Predator"
@@ -108,7 +109,7 @@ res_global <- rma.mv(
 # ---- 4. Figure 5: forest plots ------------------------------------------
 
 strategy_map <- data.frame(
-  Unit = c("Cytophagales", "Streptomycetales", "Lysobacter",
+  Unit = c("Cytophagales", "Streptomycetales", "Lysobacter","Agromyces",
            "Bdellovibrionota", "Vampirovibrionales", "Myxococcota", "Non-Predator"),
   pred_type = c("Facultative", "Facultative", "Facultative",
                 "Obligate", "Obligate", "Facultative", "Non-Predator")

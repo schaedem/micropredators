@@ -1,13 +1,6 @@
 # Figure 4 -- Step 2: aggregation + meta-regression + plot
 #
-# Pools the per-timepoint DESeq2 results (fig4_per_timepoint_deseq.R
-# output, 4 CSVs) across the 4 timepoints, aggregates Order-level LFC
-# into taxonomic trophic groups via inverse-variance weighting, then fits
-# a hierarchical mixed-effects meta-regression (metafor::rma.mv) to
-# estimate the rhizosphere effect for each trophic group, separately for
-# each plant. 
 
-library(tidyverse)
 library(metafor)
 library(cowplot)
 library(ggtext)
@@ -20,13 +13,14 @@ conv_vetch <- read_csv("conv_vetch_results_order_level.csv")
 all_results <- rbind(org_wheat, org_vetch, conv_wheat, conv_vetch)
 
 # Order-level LFC -> trophic group, inverse-variance weighted mean
-# (Supplemental Methods Eq. 1-2, same approach as the meta-analysis).
+# (Supplemental Methods Eq. 1-2, same approach as the cross-study meta-analysis).
 master_aggregated <- all_results %>%
   mutate(Unit = case_when(
     grepl("Myxococcota", PlotLabel) ~ "Myxococcota",
     grepl("Streptomycetales", AnalysisGroup) ~ "Streptomycetales",
     grepl("Bdellovibrionota", PlotLabel) ~ "Bdellovibrionota",
     grepl("Lysobacter", AnalysisGroup) ~ "Lysobacter",
+    grepl("Agromyces", AnalysisGroup) ~ "Agromyces",
     grepl("Cytophagales", AnalysisGroup) ~ "Cytophagales",
     grepl("Vampirovibrionales", AnalysisGroup) ~ "Vampirovibrionales",
     TRUE ~ "Non-Predator"
@@ -34,9 +28,7 @@ master_aggregated <- all_results %>%
   group_by(pred_type, Unit, timepoint, plant, treatment) %>%
   summarise(yi = sum(log2FoldChange / vi) / sum(1 / vi), V = 1 / sum(1 / vi), .groups = "drop")
 
-# Cap precision weights at 500 to prevent high-depth datasets from
-# dominating the model; sensitivity check across thresholds confirms
-# stability (Supplemental Methods).
+# Cap precision weights at 500 
 compare_caps <- function(cap_val, data) {
   dat <- data %>% mutate(V_temp = 1 / pmin(1 / V, cap_val))
   mod <- rma.mv(yi ~ Unit - 1, V = V_temp, random = list(~ 1 | timepoint), data = dat)
@@ -57,23 +49,22 @@ master_weighted <- master_aggregated %>%
 res_meta_final <- rma.mv(yi = yi, V = V_stable, mods = ~ Unit,
                          random = list(~ 1 | timepoint), data = master_weighted, method = "ML")
 
-# Does adding plant/soil background improve the model? (reported in Results)
+# Does adding plant/soil background improve the model? 
 res_meta_plant <- rma.mv(yi = yi, V = V_stable, mods = ~ Unit + plant,
                          random = list(~ 1 | timepoint), data = master_weighted, method = "ML")
-res_meta_plant2 <- rma.mv(yi = yi, V = V_stable, mods = ~ plant,
-                          random = list(~ 1 | timepoint), data = master_weighted, method = "ML")
-anova(res_meta_plant, res_meta_plant2)
+
+anova(res_meta_plant, res_meta_final) #p=0.02; adding plant improves model fit
 
 res_meta_soil <- rma.mv(yi = yi, V = V_stable, mods = ~ Unit + treatment,
                         random = list(~ 1 | timepoint), data = master_weighted, method = "ML")
-anova(res_meta_final, res_meta_soil)
+anova(res_meta_final, res_meta_soil) #p=0.30; adding soil does not change model fit
 
 # ---- 3. Figure 4: forest plots, per plant -----------------------------------
 strategy_map <- data.frame(
-  Unit = c("Cytophagales", "Streptomycetales", "Lysobacter", "Bdellovibrionota", "Vampirovibrionales", "Myxococcota", "Non-Predator"),
-  pred_type = c("Facultative", "Facultative", "Facultative", "Obligate", "Obligate", "Facultative", "Non-Predator")
+  Unit = c("Cytophagales", "Streptomycetales", "Lysobacter", "Agromyces", "Bdellovibrionota", "Vampirovibrionales", "Myxococcota", "Non-Predator"),
+  pred_type = c("Facultative", "Facultative", "Facultative", "Facultative", "Obligate", "Obligate", "Facultative", "Non-Predator")
 )
-display_order <- c("Streptomycetales", "Myxococcota", "Bdellovibrionota", "Vampirovibrionales", "Cytophagales", "Lysobacter")
+display_order <- c("Streptomycetales", "Myxococcota", "Bdellovibrionota", "Vampirovibrionales", "Cytophagales", "Lysobacter", "Agromyces")
 
 sig_label <- function(p) case_when(p < 0.001 ~ "***", p < 0.01 ~ "**", p < 0.05 ~ "*", p < 0.1 ~ ".", TRUE ~ "")
 

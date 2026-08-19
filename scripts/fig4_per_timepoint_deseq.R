@@ -1,10 +1,4 @@
-# Figure 4 -- Step 1: per-timepoint differential abundance (this study)
-#
-# DESeq2 (rhizosphere vs. bulk) run separately for each of the 8
-# soil-background x plant x timepoint combinations, ASVs aggregated to
-# the Order level (Lysobacter kept at genus level), LFC shrunk via ashr.
-# Output (4 CSVs, one per plant x treatment, each with all 4 timepoints
-# stacked) feeds Step 2 (fig4_rhizosphere_effect.R).
+# Figure 4
 
 library(tidyverse)
 library(phyloseq)
@@ -12,8 +6,8 @@ library(DESeq2)
 
 physeq <- readRDS("nifa_joint.phyloseq.RDS")
 
-# Order-level grouping (genus-level for Lysobacter), with rank fallback
-# for unclassified ASVs, and predator-strategy classification.
+# Order-level grouping (genus-level for Lysobacter and Agromyces)
+
 bad_terms <- "uncultured|unidentified|putative|Incertae_Sedis|NA|unknown|\\bAmbiguous\\b"
 
 tax_df <- as.data.frame(tax_table(physeq)) %>%
@@ -25,18 +19,23 @@ tax_df <- as.data.frame(tax_table(physeq)) %>%
       !str_detect(Phylum, bad_terms) & !is.na(Phylum) ~ paste0(Phylum, "_uncl"),
       TRUE ~ paste0(Domain, "_uncl")
     ),
-    AnalysisGroup = ifelse(Genus == "Lysobacter", "g__Lysobacter", paste0("o__", CleanOrder)),
-    PlotLabel = ifelse(Genus == "Lysobacter", paste0(Phylum, " | Lysobacter"), paste0(Phylum, " | ", CleanOrder)),
-    AnalysisGroup = ifelse(Genus == "Agromyces", "g__Agromyces", paste0("o__", CleanOrder)),
-    PlotLabel = ifelse(Genus == "Agromyces", paste0(Phylum, " | Agromyces"), paste0(Phylum, " | ", CleanOrder)),
+    AnalysisGroup = case_when(
+      Genus == "Lysobacter" ~ "g__Lysobacter",
+      Genus == "Agromyces"  ~ "g__Agromyces",
+      TRUE ~ paste0("o__", CleanOrder)
+    ),
+    PlotLabel = case_when(
+      Genus == "Lysobacter" ~ paste0(Phylum, " | Lysobacter"),
+      Genus == "Agromyces"  ~ paste0(Phylum, " | Agromyces"),
+      TRUE ~ paste0(Phylum, " | ", CleanOrder)
+    ),
     pred_type = case_when(
       Phylum == "Myxococcota" ~ "Facultative",
-      Order %in% c("Streptomycetales", "Cytophagales") | Genus == "Lysobacter" ~ "Facultative" | Genus == "Agromyces" ~ "Facultative",
+      Order %in% c("Streptomycetales", "Cytophagales") | Genus == "Lysobacter" | Genus == "Agromyces" ~ "Facultative",
       Order == "Vampirovibrionales" | Phylum == "Bdellovibrionota" ~ "Obligate",
       TRUE ~ "None"
     )
   )
-
 # Aggregate to AnalysisGroup, run DESeq2 (rhizosphere vs. bulk) for one
 # plant x treatment x timepoint subset, shrink LFC with ashr.
 run_deseq_from_phyloseq <- function(obj, plant_val, treatment_val, timepoint_val,
