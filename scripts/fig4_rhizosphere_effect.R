@@ -157,4 +157,4 @@ wheat_plot <- make_plant_forest("wheat")
 # (C) vetch relative-to-non-predator, (D) wheat relative-to-non-predator
 fig4 <- cowplot::plot_grid(vetch_plot_overall, wheat_plot_overall, vetch_plot, wheat_plot, labels = "AUTO")
 fig4
-ggsave("Figure4_rhizosphere_effect.png", fig4, dpi = 600, height = 6, width = 12, units = "in")
+ggsave("Figure4_rhizosphere_effect.png", fig4, dpi = 600, height = 6.5, width = 12.5, units = "in")
