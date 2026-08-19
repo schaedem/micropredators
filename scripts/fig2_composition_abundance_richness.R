@@ -1,17 +1,4 @@
-# Figure 2. Micropredator composition, abundance, richness, and targeted
-# genus detection in the rhizosphere.
-#
-# (A) Bubble plot of the most abundant labeled taxa (top 10 predator ASVs,
-#     top 5 non-predator ASVs per treatment x plant), ordered by
-#     hierarchical clustering (binary distance on presence/absence across
-#     treatment x plant x timepoint) within each of the two panels.
-# (B) Labeled predator abundance (log-adjusted) in the rhizosphere.
-# (C) Labeled predator richness in the rhizosphere, with ALL significant
-#     pairwise (treatment x plant) comparisons shown as brackets.
-# (D) Binary detection grid for chosen genera, built from ALL labeling
-#     events in `all_incorps` (not just the top-ASV display subset),
-#     restricted to ASVs present in soil_incorp_rare/final_data.
-# Panels combined via patchwork; saved as one figure.
+# Figure 2. Micropredator composition, abundance, and richness
 
 library(tidyverse)
 library(phyloseq)
@@ -36,7 +23,7 @@ org_incorp <- readRDS("source_incorp_by_day.RDS")
 conv_incorp <- readRDS("conv_source_incorp_by_day.RDS")
 all_incorps <- rbind(org_incorp, conv_incorp)
 
-#soil_incorp_rare <- readRDS("nifa_joint.phyloseq.RDS")
+#Incorporators phyloseq; present in rarefied communities with zeros imputed when no label detected
 soil_incorp_rare <- readRDS("joint_incorps_soil.RDS")
 
 org_pap <- readRDS("nifa.paprica.RDS")
@@ -190,41 +177,7 @@ size_limits <- range(plot_subset$mean_log_adj, na.rm = TRUE)
 size_breaks <- pretty(size_limits, n = 4)
 size_breaks <- size_breaks[size_breaks >= size_limits[1] & size_breaks <= size_limits[2]]
 
-# 7. MEDIAN FIRST-LABEL DAY (annotation, currently off) -----------------------
-show_median_first_label <- FALSE
-
-asv_predator_map <- distinct(final_data, ASV, predator)
-dup_asvs <- asv_predator_map %>% count(ASV) %>% filter(n > 1)
-if (nrow(dup_asvs) > 0) {
-  warning(nrow(dup_asvs), " ASV(s) have inconsistent predator classification across samples: ",
-          paste(dup_asvs$ASV, collapse = ", "))
-}
-
-unmatched_asvs <- setdiff(unique(all_incorps$ASV), unique(asv_predator_map$ASV))
-if (length(unmatched_asvs) > 0) {
-  warning(length(unmatched_asvs), " ASV(s) in all_incorps have no match in final_data.")
-}
-
-median_label_day <- all_incorps %>%
-  select(-any_of(c("Order", "predator"))) %>%
-  mutate(
-    timepoint = case_when(
-      timepoint == "A" ~ 1, timepoint == "B" ~ 3,
-      timepoint == "C" ~ 7, timepoint == "D" ~ 14,
-      TRUE ~ suppressWarnings(as.numeric(timepoint))
-    ),
-    treatment = case_when(treatment == "org" ~ "Organic",
-                          treatment == "conv" ~ "Conventional",
-                          TRUE ~ treatment)
-  ) %>%
-  left_join(asv_predator_map, by = "ASV") %>%
-  group_by(ASV, plant, treatment, predator) %>%
-  summarize(first_label = min(timepoint), .groups = "drop") %>%
-  group_by(predator, treatment) %>%
-  summarize(median_day = median(first_label, na.rm = TRUE), n_events = n(), .groups = "drop") %>%
-  mutate(label_text = paste0("Median first label: day ", median_day))
-
-# 8. VISUALIZATION: BUBBLE PLOT + DENDROGRAM -----------------------------------
+# VISUALIZATION: BUBBLE PLOT + DENDROGRAM -----------------------------------
 make_dendro_plot <- function(hc) {
   if (is.null(hc)) return(plot_spacer())
   dd <- ggdendro::dendro_data(hc, type = "rectangle")
@@ -377,7 +330,7 @@ bubble_plot <- dendro_nonpred +
               widths = c(0.12, 1, 0.5))
 
 bubble_plot
-ggsave("bubble_abund_combined_hierarchical.png", height = 10, width = 12, units = "in", dpi = 600)
+#ggsave("bubble_abund_combined_hierarchical.png", height = 10, width = 12, units = "in", dpi = 600)
 
 # 9. PREDATOR ABUNDANCE (Panel B) ----------------------------------------------
 plot_df <- final_data %>%
@@ -448,7 +401,7 @@ abund_plot <-
   )
 
 abund_plot
-ggsave("pred_abund_plot.png", height = 3.5, width = 6, units = "in", dpi = 600)
+#ggsave("pred_abund_plot.png", height = 3.5, width = 6, units = "in", dpi = 600)
 
 # 10. PREDATOR RICHNESS (Panel C) ----------------------------------------------
 plot_df2 <- final_data %>%
@@ -483,7 +436,7 @@ richness_plot <-
   ggplot(plot_df2, aes(x = plant, y = total_richness, fill = treatment)) +
   geom_jitter(aes(alpha = plant, color = treatment), size = 5, position = position_jitterdodge()) +
   theme_linedraw() +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.05 + 0.1 * max(1, nrow(bracket_df))))) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.1 ))) +
   scale_alpha_manual(values = c("Wheat" = 1, "Vetch" = 0.5), name = "Plant") +
   scale_color_manual(values = c("#FED439FF", "#709AE1FF")) +
   labs(x = "", y = "Labeled\nPredator Richness") +
@@ -496,9 +449,9 @@ richness_plot <-
         plot.margin = margin(t = 10, r = 10, b = 10, l = -10),
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank()
-  )
+  ) +
   geom_signif(
-    y_position = c(15, 14.5),
+    y_position = c(16.5, 16),
     xmin = c(1.2, 1.8),
     xmax = c(1.8, 2.2),
     annotation = c("**", "**"),
@@ -508,11 +461,11 @@ richness_plot <-
 
 
 richness_plot
-ggsave("pred_richness_plot.png", height = 3.5, width = 6, units = "in", dpi = 600)
+#ggsave("pred_richness_plot.png", height = 3.5, width = 6, units = "in", dpi = 600)
 
 # PANEL D -----------------------------------------------------------------------
 
-chosen_genus <- c("Haliangium", "Agromyces", "Streptomyces", "Lysobacter")
+chosen_genus <- c("Haliangium")
 
 
 top_tax <- unique(plot_subset$Genus[!is.na(plot_subset$Genus) & plot_subset$Genus != "unclassified"])
@@ -549,7 +502,7 @@ detection_grid_plot <- ggplot(genus_detection,
 detection_grid_plot
 
 plot_grid(detection_grid_plot, labels = c("D"), label_size = 20)
-ggsave("detection_grid.png", height = 4.5, width = 8.5, units = "in", dpi = 600)
+#ggsave("detection_grid.png", height = 4.5, width = 8.5, units = "in", dpi = 600)
 
 # 11. STATISTICAL TESTING -------------------------------------------------------
 test_df <- final_data %>%
@@ -561,14 +514,16 @@ test_df <- final_data %>%
          plant = as.factor(plant),
          timepoint = as.factor(timepoint))
 
-mod <- lmer(log_adj_abund ~ treatment * plant + timepoint + (1 | rep), data = test_df)
+mod <- lmer(log_adj_abund ~ treatment * plant * timepoint + (1 | rep), data = test_df)
 car::Anova(mod)
-summary(mod)
 
-# treatment       147.8328  1  < 2.2e-16 ***
-# plant             3.8371  1    0.05013 .
-# timepoint         3.3009  3    0.34751
-# treatment:plant  24.3926  1  7.857e-07 ***
+# treatment                 73.0268  1  < 2.2e-16 ***
+#   plant                      0.6023  1  0.4376844    
+# timepoint                  1.6080  3  0.6575839    
+# treatment:plant           18.0945  1  2.102e-05 ***
+#   treatment:timepoint       20.4436  3  0.0001373 ***
+#   plant:timepoint            3.6405  3  0.3029870    
+# treatment:plant:timepoint  8.1494  3  0.0430230 *  
 
 specs <- emmeans(mod, pairwise ~ treatment * plant)
 results_df <- as.data.frame(specs$contrasts) %>%
@@ -576,16 +531,6 @@ results_df <- as.data.frame(specs$contrasts) %>%
   mutate(signif = ifelse(padj<0.05, "*", ""))
 results_df
 
-# Panel C's model (mod2) was already fit in section 10 so its contrasts
-# could drive the plotted significance brackets -- reprinted here for the
-# record rather than refit.
-car::Anova(mod2)
-summary(mod2)
-
-# treatment       14.2182  1  0.0001628 ***
-# plant            0.9983  1  0.3177270
-# timepoint        1.2320  3  0.7453341
-# treatment:plant  2.1447  1  0.1430617
 
 richness_contrasts
 
@@ -616,24 +561,30 @@ extract_legend_bc <- function(p) {
 
 legend_bc_grob <- extract_legend_bc(legend_bc_plot)
 
-# B and C explicitly forced to equal widths (1:1) in one row.
-bc_row <- (abund_plot + labs(tag = "B") | richness_plot + labs(tag = "C")) +
-  plot_layout(widths = c(1, 1))
 
-right_col <- (
-  wrap_elements(full = legend_bc_grob) /
-    bc_row /
-    (detection_grid_plot + labs(tag = "D")) /
-    plot_spacer()
-) +
-  plot_layout(heights = c(1, 1.5, 1, 1.5))
+bc_row <- (abund_plot + labs(tag = "B") +
+             theme(plot.tag = element_text(face = "bold", size = 15))| richness_plot + labs(tag = "C")) +
+  theme(plot.tag = element_text(face = "bold", size = 15)) +
+  plot_layout(widths = c(1, 1)) 
 
-combined_figure <- (wrap_elements(full = bubble_plot) + labs(tag = "A") | plot_spacer() | right_col) +
-  plot_layout(widths = c(3, 0.02, 1.7)) &
+d_row <- (detection_grid_plot + labs(tag = "D") +
+            theme(plot.tag = element_text(face = "bold", size = 15)) | plot_spacer()) +
+  plot_layout(widths = c(0.75, 1)) +
+  theme(plot.tag = element_text(face = "bold", size = 15))
+
+right_col <- wrap_elements(full = legend_bc_grob) /
+  bc_row /
+  d_row +
+  plot_layout(heights = c(0.5, 1, 0.7))
+
+right_col_padded <- (wrap_elements(full = right_col) / plot_spacer()) +
+  plot_layout(heights = c(1, 0.3))  # tune this ratio to taste
+
+combined_figure <- (wrap_elements(full = bubble_plot) + labs(tag = "A") | plot_spacer() | right_col_padded) +
+  plot_layout(widths = c(3, 0.02, 2)) &
   theme(
     plot.tag = element_text(face = "bold", size = 15),
     plot.margin = margin(t = 5, r = 5, b = 5, l = 5)
   )
-
 combined_figure
 ggsave("bubble_abund_combined2.png", combined_figure, height = 12, width = 17, units = "in", dpi = 600)
